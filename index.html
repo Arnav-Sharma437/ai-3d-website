@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI in Web Design & Development</title>
+    
+    <!-- Three.js and GSAP Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-color: #050505;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --accent-1: #4facfe;
+            --accent-2: #00f2fe;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --warning-glow: rgba(255, 75, 75, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Custom Cursor */
+        body, a, button, .btn {
+            cursor: none !important;
+        }
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            box-shadow: 0 0 10px var(--accent-2), 0 0 20px var(--accent-2);
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(79, 172, 254, 0.5);
+            background-color: rgba(79, 172, 254, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s;
+        }
+        .cursor-hover .cursor-outline {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(79, 172, 254, 0.15);
+            border-color: var(--accent-2);
+        }
+
+        /* Intro Welcome Overlay */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+        }
+        .intro-content {
+            text-align: center;
+            overflow: hidden;
+            padding: 0 20px;
+        }
+        .intro-text {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            margin: 15px 0;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: translateY(40px);
+            text-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+        }
+
+        /* 3D Canvas Background */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        
+        h1 {
+            font-size: clamp(3rem, 6vw, 5.5rem);
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        h2 {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin-bottom: 2rem;
+        }
+
+        /* Layout & Sections */
+        section {
+            min-height: 100vh;
+            padding: 120px 5%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-20deg);
+            transition: 0.5s;
+        }
+
+        .glass-card:hover::before {
+            left: 150%;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 242, 254, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(45deg, var(--accent-1), var(--accent-2));
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--accent-2), var(--accent-1));
+            border-radius: 30px;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .btn:hover::after {
+            opacity: 1;
+        }
+
+        .btn:hover {
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* Specific Sections */
+        .hero {
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            background: linear-gradient(to right, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Warning / Disadvantages Tone */
+        .warning-card {
+            border-color: rgba(255, 75, 75, 0.2);
+        }
+        .warning-card:hover {
+            box-shadow: 0 15px 35px var(--warning-glow);
+            border-color: rgba(255, 75, 75, 0.4);
+        }
+        .warning-icon {
+            background: linear-gradient(to right, #ff4b4b, #ff9068);
+            -webkit-background-clip: text;
+        }
+
+        /* Comparison Section */
+        .comparison-wrapper {
+            display: flex;
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+        .comparison-side {
+            flex: 1;
+            padding: 3rem;
+            border-radius: 24px;
+            position: relative;
+        }
+        .before-ai {
+            background: rgba(255,255,255,0.02);
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+        .after-ai {
+            background: rgba(79, 172, 254, 0.05);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            box-shadow: inset 0 0 50px rgba(79, 172, 254, 0.05);
+        }
+        .comparison-side ul {
+            list-style: none;
+            line-height: 2.5;
+            font-size: 1.1rem;
+        }
+
+        /* Utility */
+        .text-center { text-align: center; margin-left: auto; margin-right: auto; }
+        
+        /* Animations */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .comparison-wrapper {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            section {
+                text-align: center;
+                align-items: center;
+                padding: 80px 5%;
+            }
+            .hero p {
+                margin: 0 auto 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Intro Welcome Overlay -->
+    <div id="intro-overlay">
+        <div class="intro-content">
+            <h2 class="intro-text">Welcome to AI World</h2>
+            <h2 class="intro-text">We will show you the impact of AI in our website</h2>
+            <h2 class="intro-text">Developed by Arnav Sharma</h2>
+        </div>
+    </div>
+
+    <!-- 3D Canvas Background -->
+    <div id="canvas-container"></div>
+
+    <!-- 1. Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="fade-up">
+                <h1>How AI is Changing Web Design</h1>
+                <p>Experience the paradigm shift. Artificial Intelligence is not just a tool; it's the new foundation for crafting digital experiences faster, smarter, and more personalized.</p>
+                <a href="#impact" class="btn">Explore Impact</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Impact Section -->
+    <section id="impact">
+        <div class="container">
+            <h2 class="fade-up">The Core Impact</h2>
+            <p class="fade-up text-center">AI touches every layer of the web creation stack, fundamentally altering how we build.</p>
+            
+            <div class="grid">
+                <div class="glass-card fade-up">
+                    <div class="icon">✨</div>
+                    <h3>UI/UX Design</h3>
+                    <p>Generative models prototype interfaces in seconds, offering layout variations and color schemes based on simple text prompts.</p>
+                </div>
+                <div class="glass-card fade-up">
+                    <div class="icon">⚡</div>
+                    <h3>Development Speed</h3>
+                    <p>AI assistants like Copilot write boilerplate, suggest entire functions, and catch bugs in real-time, drastically reducing dev cycles.</p>
+                </div>
+                <div class="glass-card fade-up">
+                    <div class="icon">⚙️</div>
+                    <h3>Workflow Automation</h3>
+                    <p>From generating assets to testing responsiveness across devices, repetitive manual tasks are handled by autonomous agents.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Advantages Section -->
+    <section id="advantages">
+        <div class="container">
+            <h2 class="fade-up">Why It Matters</h2>
+            <div class="grid">
+                <div class="glass-card fade-up">
+                    <h3 style="color: var(--accent-2); margin-bottom: 1rem;">01. Faster Go-to-Market</h3>
+                    <p>What used to take months now takes weeks. AI accelerates ideation, coding, and deployment phases exponentially.</p>
+                </div>
+                <div class="glass-card fade-up">
+                    <h3 style="color: var(--accent-2); margin-bottom: 1rem;">02. Cost Efficiency</h3>
+                    <p>Smaller teams can achieve the output of massive agencies, reducing overhead and resource requirements drastically.</p>
+                </div>
+                <div class="glass-card fade-up">
+                    <h3 style="color: var(--accent-2); margin-bottom: 1rem;">03. Hyper-Personalization</h3>
+                    <p>Websites can adapt their UI and content dynamically based on user behavior, predicted and curated by AI models.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Disadvantages Section -->
+    <section id="disadvantages">
+        <div class="container">
+            <h2 class="fade-up">The Dark Side</h2>
+            <p class="fade-up text-center">With rapid acceleration comes new challenges and pitfalls.</p>
+            
+            <div class="grid">
+                <div class="glass-card warning-card fade-up">
+                    <div class="icon warning-icon">⚠️</div>
+                    <h3>Homogenized Design</h3>
+                    <p>Over-reliance on popular AI models can lead to generic, "same-looking" websites devoid of human soul and unique brand identity.</p>
+                </div>
+                <div class="glass-card warning-card fade-up">
+                    <div class="icon warning-icon">📉</div>
+                    <h3>Job Displacement</h3>
+                    <p>Entry-level tasks are easily automated, shifting the industry demand towards prompt engineering and high-level architecture.</p>
+                </div>
+                <div class="glass-card warning-card fade-up">
+                    <div class="icon warning-icon">🧠</div>
+                    <h3>Loss of Core Skills</h3>
+                    <p>Developers might rely too heavily on AI to write code, potentially degrading fundamental understanding of underlying systems.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Comparison Section -->
+    <section id="comparison">
+        <div class="container">
+            <h2 class="fade-up">The Paradigm Shift</h2>
+            <div class="comparison-wrapper fade-up">
+                <div class="comparison-side before-ai">
+                    <h3 style="color: var(--text-muted); margin-bottom: 1.5rem;">Traditional Workflow</h3>
+                    <ul style="color: var(--text-muted);">
+                        <li>❌ Manual wireframing & mockups</li>
+                        <li>❌ Writing boilerplate from scratch</li>
+                        <li>❌ Manual cross-browser testing</li>
+                        <li>❌ Static, one-size-fits-all UI</li>
+                    </ul>
+                </div>
+                <div class="comparison-side after-ai">
+                    <h3 style="color: var(--accent-1); margin-bottom: 1.5rem;">AI-Augmented Workflow</h3>
+                    <ul>
+                        <li>✅ Generative UI drafting & ideation</li>
+                        <li>✅ AI-assisted instant code generation</li>
+                        <li>✅ Automated QA & optimization</li>
+                        <li>✅ Dynamic, personalized user experiences</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Conclusion Section -->
+    <section id="conclusion" style="text-align: center; align-items: center; min-height: 80vh;">
+        <div class="container">
+            <h2 class="fade-up">The Future is Collaborative</h2>
+            <p class="fade-up text-center" style="margin-bottom: 3rem;">AI will not replace great designers and developers. It will replace those who don't use AI. The future belongs to those who learn to conduct these powerful new tools.</p>
+            <div class="fade-up">
+                <a href="#home" class="btn">Back to Top</a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // --- GSAP Scroll Animations ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Custom Cursor Logic
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            
+            gsap.set(cursorDot, { xPercent: -50, yPercent: -50 });
+            gsap.set(cursorOutline, { xPercent: -50, yPercent: -50 });
+            
+            window.addEventListener('mousemove', (e) => {
+                const posX = e.clientX;
+                const posY = e.clientY;
+                
+                // Main dot follows instantly
+                gsap.set(cursorDot, { x: posX, y: posY });
+                
+                // Outline follows with slight delay
+                gsap.to(cursorOutline, {
+                    x: posX,
+                    y: posY,
+                    duration: 0.15,
+                    ease: "power2.out"
+                });
+            });
+
+            // Hover effects
+            const hoverElements = document.querySelectorAll('a, button, .glass-card');
+            hoverElements.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    document.body.classList.add('cursor-hover');
+                });
+                el.addEventListener('mouseleave', () => {
+                    document.body.classList.remove('cursor-hover');
+                });
+            });
+
+            // Intro Welcome Animation (plays once on load)
+            const tl = gsap.timeline();
+            
+            tl.to('.intro-text', {
+                y: 0,
+                opacity: 1,
+                duration: 0.8,
+                stagger: 0.2,
+                ease: "power3.out",
+                delay: 0.2
+            })
+            .to('.intro-text', {
+                y: -20,
+                opacity: 0,
+                duration: 0.6,
+                stagger: 0.1,
+                ease: "power2.in",
+                delay: 1.5 // Holds for a bit
+            })
+            .to('#intro-overlay', {
+                opacity: 0,
+                duration: 0.8,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    document.getElementById('intro-overlay').style.display = 'none';
+                    // Trigger scroll animations here
+                    ScrollTrigger.refresh();
+                }
+            });
+
+            // Animate fade-up elements with stagger
+            const fadeElements = gsap.utils.toArray('.fade-up');
+            
+            fadeElements.forEach(element => {
+                gsap.to(element, {
+                    scrollTrigger: {
+                        trigger: element,
+                        start: "top 85%",
+                        toggleActions: "play none none reverse"
+                    },
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    ease: "power3.out"
+                });
+            });
+            
+            // Stagger grid cards
+            gsap.utils.toArray('.grid').forEach(grid => {
+                const cards = grid.querySelectorAll('.glass-card');
+                gsap.to(cards, {
+                    scrollTrigger: {
+                        trigger: grid,
+                        start: "top 85%",
+                        toggleActions: "play none none reverse"
+                    },
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    stagger: 0.2,
+                    ease: "power3.out"
+                });
+            });
+        });
+
+        // --- Three.js Neural Network Background ---
+        const container = document.getElementById('canvas-container');
+        
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.001);
+
+        // Camera setup
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.z = 500;
+
+        // Renderer setup
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        // Responsive handling
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 250 : 600; // Reduce count for mobile
+
+        // --- Enhanced Particles System Setup ---
+        const color1 = new THREE.Color(0x4facfe); // Blue
+        const color2 = new THREE.Color(0x00f2fe); // Cyan
+        const color3 = new THREE.Color(0x8a2be2); // Deep Purple glow
+        const color4 = new THREE.Color(0xff4b4b); // Warning Red (sparse)
+
+        const networkGroup = new THREE.Group();
+        
+        // Create 3 layers of particles with different sizes for depth
+        const layer1Count = Math.floor(particleCount * 0.5);
+        const layer2Count = Math.floor(particleCount * 0.3);
+        const layer3Count = particleCount - layer1Count - layer2Count;
+
+        const particleLayers = [
+            { count: layer1Count, size: isMobile ? 2 : 3 },
+            { count: layer2Count, size: isMobile ? 4 : 6 },
+            { count: layer3Count, size: isMobile ? 6 : 9 }
+        ];
+
+        // Store all positions for lines computation later
+        const allPositions = [];
+        const allColors = [];
+
+        particleLayers.forEach(layer => {
+            const geometry = new THREE.BufferGeometry();
+            const layerPositions = [];
+            const layerColors = [];
+
+            for (let i = 0; i < layer.count; i++) {
+                const x = (Math.random() - 0.5) * 2000;
+                const y = (Math.random() - 0.5) * 2000;
+                const z = (Math.random() - 0.5) * 1200; // Increased depth
+                
+                layerPositions.push(x, y, z);
+                allPositions.push(x, y, z);
+
+                const mixedColor = color1.clone();
+                const rand = Math.random();
+                if (rand > 0.5 && rand <= 0.8) mixedColor.lerp(color2, Math.random());
+                else if (rand > 0.8 && rand <= 0.95) mixedColor.lerp(color3, Math.random()); // Add purple
+                else if (rand > 0.95) mixedColor.copy(color4); 
+
+                layerColors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+                allColors.push(mixedColor.r, mixedColor.g, mixedColor.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(layerPositions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(layerColors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: layer.size,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.9,
+                sizeAttenuation: true
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            networkGroup.add(particles);
+        });
+        
+        // --- Static Neural Network Lines (Pre-calculated for performance) ---
+        if (!isMobile) {
+            const lineMaterial = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.15
+            });
+
+            const linePositions = [];
+            const lineColors = [];
+            
+            // Connect nearby dots
+            for (let i = 0; i < particleCount; i++) {
+                for (let j = i + 1; j < particleCount; j++) {
+                    const dx = allPositions[i*3] - allPositions[j*3];
+                    const dy = allPositions[i*3+1] - allPositions[j*3+1];
+                    const dz = allPositions[i*3+2] - allPositions[j*3+2];
+                    const distSq = dx*dx + dy*dy + dz*dz;
+                    
+                    if (distSq < 35000) { // Slightly increased connect threshold
+                        linePositions.push(
+                            allPositions[i*3], allPositions[i*3+1], allPositions[i*3+2],
+                            allPositions[j*3], allPositions[j*3+1], allPositions[j*3+2]
+                        );
+                        lineColors.push(
+                            allColors[i*3], allColors[i*3+1], allColors[i*3+2],
+                            allColors[j*3], allColors[j*3+1], allColors[j*3+2]
+                        );
+                    }
+                }
+            }
+
+            const lineGeometry = new THREE.BufferGeometry();
+            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+            lineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3));
+            
+            const linesMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
+            networkGroup.add(linesMesh);
+        }
+
+        scene.add(networkGroup);
+
+        // --- Interaction & Animation Variables ---
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        // Mouse move event for Parallax
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+        });
+
+        // Scroll event for parallax
+        let scrollY = 0;
+        window.addEventListener('scroll', () => {
+            scrollY = window.scrollY;
+        });
+
+        // Resize event
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            // Smooth mouse follow (Parallax effect)
+            targetX = mouseX * 0.15;
+            targetY = mouseY * 0.15;
+            
+            // Camera movement reacting to cursor and scroll
+            camera.position.x += (targetX - camera.position.x) * 0.03;
+            camera.position.y += (-targetY - (scrollY * 0.3) - camera.position.y) * 0.03;
+            camera.lookAt(scene.position);
+
+            // Add smooth floating motion to the whole group
+            networkGroup.position.y = Math.sin(time * 0.5) * 15;
+            networkGroup.position.x = Math.cos(time * 0.3) * 10;
+
+            // Rotate entire network group slowly
+            networkGroup.rotation.y = time * 0.04;
+            networkGroup.rotation.x = Math.sin(time * 0.2) * 0.05; // Slight tilt
+            networkGroup.rotation.z = time * 0.02;
+
+            renderer.render(scene, camera);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
